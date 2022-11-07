@@ -1,0 +1,1 @@
+projects and homeworks given in 2022 fall and spring terms
