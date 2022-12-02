@@ -1,36 +1,172 @@
 ﻿using System;
 
+// DNA strands
 char[] DNA1 = { };
 char[] DNA2 = { };
 char[] DNA3 = { };
 
-string RemoveCharacter(string array, char c) {
+// information strings for all of the operations
+string[] OPERATION_INFO = {
+    "Load a DNA sequence from a file",
+    "Load a DNA sequence from a string",
+    "Generate random DNA sequence of a BLOB",
+    "Check DNA gene structure",
+    "Check DNA of BLOB organism",
+    "Produce complement of a DNA sequence",
+    "Determine amino acids",
+    "Delete codons (delete n codons, starting from mth codon)",
+    "Insert codons (insert a codon sequence, starting from mth codon)",
+    "Find codons (find a codon sequence, starting from mth codon)",
+    "Reverse codons (reverse n codons, starting from mth codon)",
+    "Find the number of genes in a DNA strand (BLOB or not)",
+    "Find the shortest gene in a DNA strand",
+    "Find the longest gene in a DNA strand",
+    "Find the most repeated n-nucleotide sequence in a DNA strand (STR - Short Tandem Repeat)",
+    "Hydrogen bond statistics for a DNA strand",
+    "Simulate BLOB generations using DNA strand 1 and 2 (DNA strand 3 is for the newborn)",
+};
+
+// |------------------| input output functions |------------------|
+
+// Reads input from console. Check operation name and give error if its not equal to parameter
+string GetOperationInput(string operation_name) {
+
+    // Remove white spaces
+    string input = RemoveWhiteSpace(Console.ReadLine());
+
+    if (input.Substring(0, operation_name.Length).ToLower() != operation_name) {
+        throw new Exception("Wrong operation name.");
+    }
+
+    return input;
+}
+
+// Returns a integer input from console
+int GetInput(string var_name) {
+
+    Console.Write("{0}: ", var_name);
+
+    return Convert.ToInt32(Console.ReadLine());
+}
+
+// Prints DNA strand to console
+void PrintStrand(string name, char[] strand) {
+
+    char? gender = GetGenderOfStrand(strand);
+    int codon_count = strand.Length / 3;
+
+    // Print name, codon count and gender (if it has a gender)
+    Console.Write("{0} (n = {1}, g = {2}):", name, codon_count, gender);
+
+    // Colors to iterate through
+    var colors = new ConsoleColor[] { ConsoleColor.Cyan, ConsoleColor.Green, ConsoleColor.DarkMagenta };
+    int index = 0;
+
+    var default_color = Console.ForegroundColor;
+    Console.ForegroundColor = colors[0];
+
+    for (int i = 0; i < codon_count; ++i) {
+
+        // Print whitespace between codons for readability
+        Console.Write(' ');
+
+        char[] codon = GetCodon(strand, i);
+
+        // Change console color
+        // before start codon and
+        // after stop codon
+
+        if (IsStartCodon(codon)) {
+            index = (index + 1) % 3;
+            Console.ForegroundColor = colors[index];
+        }
+
+        Console.Write(new string(codon));
+
+        if (IsStopCodon(codon)) {
+            index = (index + 1) % 3;
+            Console.ForegroundColor = colors[index];
+        }
+
+    }
+
+    Console.Write(' ');
+
+    for (int i = strand.Length - strand.Length % 3; i < strand.Length; ++i) {
+        Console.Write(strand[i]);
+    }
+
+    // Reset console color to default color
+    Console.ForegroundColor = default_color;
+    Console.WriteLine();
+}
+
+// |--------------------| utility functions |--------------------|
+
+// Remove a character from string
+string RemoveCharacter(string input, char c) {
 
     int count = 0;
 
-    for (int i = 0; i < array.Length; ++i) {
-        if (array[i] != c) {
+    for (int i = 0; i < input.Length; ++i) {
+        if (input[i] != c) {
             count += 1;
         }
     }
 
+    // Create a new char array with a new size
     char[] result = new char[count];
     int index = 0;
 
-    for (int i = 0; i < array.Length; ++i) {
-        if (array[i] != c) {
-            result[index] = array[i];
+    for (int i = 0; i < input.Length; ++i) {
+        if (input[i] != c) {
+            result[index] = input[i];
             index += 1;
         }
     }
 
+    // result doesnt contain c parameter
     return new string(result);
 }
 
+// Remove any white spaces from string
+string RemoveWhiteSpace(string input) {
+
+
+    input = RemoveCharacter(input, ' ');
+    input = RemoveCharacter(input, '\t');
+    input = RemoveCharacter(input, '\n');
+    input = RemoveCharacter(input, '\r');
+
+    return input;
+}
+
+// Throw an exception if strand contains
+// unvalid nuclietide type
+void CheckStrand(char[] strand) {
+
+    for (int i = 0; i < strand.Length; ++i) {
+
+        switch (strand[i]) {
+            case 'A':
+            case 'T':
+            case 'G':
+            case 'C':
+                break;
+            default:
+                // Unvalid nucleotide
+                throw new Exception("Wrong strand. Unvalid nucleotide type: " + strand[i]);
+        }
+
+    }
+}
+
+// Return true if codon equals "ATG"
 bool IsStartCodon(char[] c) {
     return c[0] == 'A' && c[1] == 'T' && c[2] == 'G';
 }
 
+// Return true if codon equals "TAA", "TGA" or "TAG"
 bool IsStopCodon(char[] codon) {
 
     switch (new string(codon)) {
@@ -43,54 +179,14 @@ bool IsStopCodon(char[] codon) {
     }
 }
 
-// |------------------| input output functions |------------------|
-string GetOperationInput(string operation_name) {
-    // read input from console and remove whitespaces
-    // check operation name and give error if its incorrect
-    // return user input
-
-    // remove white space
-    string input = RemoveCharacter(Console.ReadLine(), ' ');
-
-    if (input[..operation_name.Length].ToLower() != operation_name) {
-        throw new Exception("Wrong operation name.");
-    }
-    
-    return input;
-}
-
-int GetInput(string var_name) {
-    // get a integer value from user and return it
-
-    Console.Write("{0}: ", var_name);
-
-    return Convert.ToInt32(Console.ReadLine());
-}
-
-void PrintStrand(string name, char[] strand) {
-
-    Console.Write("{0} (n = {1}):", name, strand.Length / 3);
-
-    for (int i = 0; i < strand.Length; ++i) {
-
-        if (i % 3 == 0) {
-            // print whitespace for readability
-            Console.Write(' ');
-        }
-
-        Console.Write(strand[i]);
-    }
-
-    Console.WriteLine();
-}
-
-// |--------------------| utility functions |--------------------|
+// Returns dna type from input
+// Example: load 1 "ATG AAA TTT TAG"
+// 1 is dna type and stands for DNA1 strand
 int GetDnaType(string input, int index) {
-    // return dna_type from input
-    // dna_type correct values -> 1, 2, 3
 
     int dna_type = Convert.ToInt32(input[index].ToString());
 
+    // dna_type correct values -> 1, 2, 3
     if (dna_type < 0 || dna_type > 3) {
         throw new Exception("Incorrect dna type. Correct values: 1, 2, 3");
     }
@@ -98,8 +194,8 @@ int GetDnaType(string input, int index) {
     return dna_type;
 }
 
+// Copy string contents to strand starting at start parameter
 char[] CopyToStrand(char[] strand, string str, int start) {
-    // copy string contents to strand starting at index
 
     for (int i = 0; i < str.Length; ++i) {
 
@@ -109,8 +205,11 @@ char[] CopyToStrand(char[] strand, string str, int start) {
     return strand;
 }
 
+// Copy strand to DNA1, DNA2 or DNA3
 void SetDNA(char[] strand, int dna_type) {
-    // copy strand to DNA1, DNA2 or DNA3
+
+    // Check if strand is valid
+    CheckStrand(strand);
 
     switch (dna_type) {
         case 1:
@@ -123,23 +222,23 @@ void SetDNA(char[] strand, int dna_type) {
             DNA3 = strand;
             break;
         default:
+            // Unvalid parameter
             throw new Exception();
     }
 }
 
+// Return codon from strand at index
+// Index parameter correct range: [0, (strand.Length / 3) - 1]
 char[] GetCodon(char[] strand, int index) {
-    // return codon from strand at index
-    // index correct values: 0, (strand.Length / 3) - 1
-
+    
     int i = index * 3;
-
     return new char[] { strand[i], strand[i + 1], strand[i + 2] };
 }
 
+// Copy codon parameter to codon from strand at index
+// Index parameter correct values: [0, (strand.Length / 3) - 1]
 char[] SetCodon(char[] strand, int index, char[] codon) {
-    // copy codon parameter to codon from strand at index
-    // index correct values: 0, (strand.Length / 3) - 1
-
+    
     for (int i = 0; i < 3; ++i) {
         strand[index * 3 + i] = codon[i];
     }
@@ -147,33 +246,28 @@ char[] SetCodon(char[] strand, int index, char[] codon) {
     return strand;
 }
 
+// Returns char array containing next gene starting from index
+// Returns null if there is no gene after index
+// Index correct values: [0, (DNA1.Length / 3) - 1]
 char[]? GetNextGene(char[] strand, ref int index) {
-    // return next gene starting from parameter index
-    // increment index for later use
-    // index correct values: 0, (DNA1.Length / 3) - 1
-
+    
     int start = -1;
 
-    for (;  index < strand.Length / 3; ++index) {
-        
+    for (; index < strand.Length / 3; ++index) {
+
         var codon = GetCodon(strand, index);
 
         if (IsStartCodon(codon)) {
-            
+
             start = index;
         } else if (IsStopCodon(codon)) {
-            
+
             if (start >= 0) {
-
-                char[] gene = new char[(index - start + 1) * 3];
-
-                for (int t = 0; t < gene.Length; ++t) {
-                    gene[t] = strand[start * 3 + t];
-                }
 
                 index += 1;
 
-                return gene;
+                return new string(strand).Substring(start * 3, (index - start) * 3).ToCharArray();
+                //return strand[(start * 3)..(index * 3)];
             }
         }
     }
@@ -181,12 +275,16 @@ char[]? GetNextGene(char[] strand, ref int index) {
     return null;
 }
 
+// Creates a new DNA sequence of BLOB
+// - Number of genes: [2, 7]
+// - Number of codons in a gene: [3, 8] (including start and stop codons)
+// - Codons in the genes are random codons (except for start and stop kodons)
+// - The first gene(gender gene) is not random. It contains 4 codons
 void GenerateRandomDNA(char gender, int dna_type) {
-    
+
     Random rng = new Random();
 
-    // dont include the first gene
-    // which is gender gene
+    // dont include the first gene. first gene is gender gene
     int gene_count = rng.Next(1, 7); // gets value in range [1, 6] 
     int[] codon_counts = new int[gene_count];
     int total_codons = 0;
@@ -208,12 +306,12 @@ void GenerateRandomDNA(char gender, int dna_type) {
 
     if (gender == 'f') {
         // gender is female
-         
+
         for (int i = 0; i < 2; ++i) {
 
             char x = x_nucleotides[rng.Next(0, 2)];
 
-            strand = SetCodon(strand, i + 1, new char[] { x, x ,x });
+            strand = SetCodon(strand, i + 1, new char[] { x, x, x });
         }
     } else if (gender == 'm') {
         // gender is male
@@ -223,7 +321,7 @@ void GenerateRandomDNA(char gender, int dna_type) {
 
         strand = SetCodon(strand, 1, new char[] { x, x, x });
         strand = SetCodon(strand, 2, new char[] { y, y, y });
-        
+
     } else {
         throw new Exception("Wrong kind of gender.");
     }
@@ -233,7 +331,7 @@ void GenerateRandomDNA(char gender, int dna_type) {
     char[] nucleotides = { 'A', 'C', 'G', 'T' };
 
     int index = 12;
-    
+
     for (int i = 0; i < gene_count; ++i) {
 
         strand = CopyToStrand(strand, "ATG", index);
@@ -266,7 +364,7 @@ void GenerateRandomDNA(char gender, int dna_type) {
         } else {
             end_codon = "TAG";
         }
-        
+
         strand = CopyToStrand(strand, end_codon, index);
         index += 3;
     }
@@ -274,9 +372,16 @@ void GenerateRandomDNA(char gender, int dna_type) {
     SetDNA(strand, dna_type);
 }
 
+// returns gender of given strand
 char? GetGenderOfStrand(char[] strand) {
 
     if (strand.Length >= 12) {
+
+        // check validity of gender strand
+        if (!IsStartCodon(GetCodon(strand, 0)) || !IsStopCodon(GetCodon(strand, 3))) {
+            return null;
+        }
+
         var codon1 = new string(GetCodon(strand, 1));
         var codon2 = new string(GetCodon(strand, 2));
 
@@ -290,19 +395,33 @@ char? GetGenderOfStrand(char[] strand) {
             // XX
             return 'f';
         }
-        if ((first_x || second_x) && (first_y || second_y)) {
-            // XY
+        if ((first_x && second_y) || (first_y && second_x)) {
+            // XY or YX
             return 'm';
         }
     }
 
     // gender not defined
-    return null;    
+    return null;
 }
 
+// Procreate a new BLOB from BLOB1 and BLOB2
+// - For the gender gene; second codon comes from BLOB1, third codon comes from 
+// - For other genes; 1 gene comes from BLOB1 (if any), and 1 gene comes from BLOB2 (if any).
 char[] Procreate() {
+    
+    // create a char array with maximum possible length
+    // resulting BLOB.Length <= strand.Length
+    char[] strand = new char[DNA1.Length + DNA2.Length - 12];
+    
+    strand = CopyToStrand(strand, "ATG", 0);
+    strand = SetCodon(strand, 1, GetCodon(DNA1, 1));
+    strand = SetCodon(strand, 2, GetCodon(DNA2, 2));
+    strand = CopyToStrand(strand, "TAG", 9);
 
-    int total_length = 4 * 3;
+    // nucleotide count in the resulting strand
+    // gender gene has 12 nucleotides
+    int length = 12; 
 
     int index1 = 4;
     int index2 = 4;
@@ -314,51 +433,15 @@ char[] Procreate() {
         gene1 = GetNextGene(DNA1, ref index1);
 
         if (gene1 == null) {
-            total_length += DNA2.Length - index2 * 3;
-            break;
-        }
 
-        total_length += gene1.Length;
-
-        GetNextGene(DNA2, ref index2); // skip next gene
-        gene2 = GetNextGene(DNA2, ref index2);
-
-        if (gene2 == null) {
-            total_length += DNA1.Length - index1 * 3;
-            break;
-        }
-    
-        total_length += gene2.Length;
-
-        GetNextGene(DNA1, ref index1); // skip next gene
-    }
-
-    char[] strand = new char[total_length];
-
-    strand = CopyToStrand(strand, "ATG", 0);
-    strand = SetCodon(strand, 1, GetCodon(DNA1, 1));
-    strand = SetCodon(strand, 2, GetCodon(DNA2, 2));
-    strand = CopyToStrand(strand, "TAG", 9);
-
-    int index = 12; // end of gender gene
-
-    index1 = 4;
-    index2 = 4;
-
-    while (true) {
-
-        gene1 = GetNextGene(DNA1, ref index1);
-
-        if (gene1 == null) {
-            
             for (int i = index2 * 3; i < DNA2.Length; ++i) {
-                strand[index++] = DNA2[i];
+                strand[length++] = DNA2[i];
             }
             break;
         }
 
         for (int i = 0; i < gene1.Length; ++i) {
-            strand[index++] = gene1[i];
+            strand[length++] = gene1[i];
         }
 
         GetNextGene(DNA2, ref index2); // skip next gene
@@ -367,22 +450,30 @@ char[] Procreate() {
         if (gene2 == null) {
 
             for (int i = index1 * 3; i < DNA1.Length; ++i) {
-                strand[index] = DNA1[i];
-                index += 1;
+                strand[length++] = DNA1[i];
             }
             break;
         }
 
         for (int i = 0; i < gene2.Length; ++i) {
-            strand[index++] = gene2[i];
+            strand[length++] = gene2[i];
         }
 
         GetNextGene(DNA1, ref index1); // skip next gene
     }
 
-    return strand;
+    char[] BLOB = new char[length];
+
+    for (int i = 0; i < length; ++i) {
+        BLOB[i] = strand[i];
+    }
+
+    return BLOB;
 }
 
+// Returns faulty codon count in DNA3
+// If 3 or more consecutive codons contain all 3-hydrogen ("GGG CCC GCG" or "GGC CCG GCC CGC" ...),
+// this condition is unhealthy, and those codons are called faulty codons.
 int GetFaultyCodonCount() {
 
     int result = 0;
@@ -392,7 +483,7 @@ int GetFaultyCodonCount() {
     for (int i = 0; i < DNA3.Length / 3; ++i) {
 
         var codon = GetCodon(DNA3, i);
-        
+
         bool all_3hydrogen = true;
 
         for (int t = 0; t < 3; ++t) {
@@ -409,9 +500,9 @@ int GetFaultyCodonCount() {
         } else {
 
             int length = i - start;
-            
+
             if (start >= 0 && length >= 3) {
-                
+
                 result += length;
             }
 
@@ -423,8 +514,9 @@ int GetFaultyCodonCount() {
     return result;
 }
 
-string CheckDNAStructure(char[] strand) {
-    
+// checks DNA structure and returns a string with info
+string CheckDNAStructure() {
+
     if (DNA1.Length % 3 != 0) {
         return "Codon structure error.";
     }
@@ -452,21 +544,23 @@ string CheckDNAStructure(char[] strand) {
         }
     }
 
-    return "Gene structure is OK";
+    return "Gene structure is OK.";
 }
 
 // |------------------| operation functions |------------------|
 
+// Load a DNA sequence from a file 
+// Command: Load 1 dna1.txt (load dna1.txt file content to DNA strand 1 (main strand)) 
 void Operation1() {
-    // load a DNA sequance from a file
+    
+    string input = GetOperationInput("load");
 
-    string file_path = GetOperationInput("load");
+    int dna_type = GetDnaType(input, 4);
 
-    int dna_type = GetDnaType(file_path, 4);
+    string text = File.ReadAllText(input[5..]);
 
-    file_path = file_path[5..];
-
-    string text = File.ReadAllText(file_path);
+    // remove white spaces
+    text = RemoveWhiteSpace(text);
 
     // make it all upper case for storing same type of characters
     var strand = text.ToUpper().ToCharArray();
@@ -474,26 +568,27 @@ void Operation1() {
     SetDNA(strand, dna_type);
 }
 
+// Load a DNA sequence from a string 
+// Command: Load 1 "ATGACTGATGAGAGATATTGA" (load a string to DNA strand 1 (main strand))
 void Operation2() {
-    // load a DNA sequance from user input
-
+    
     string input = GetOperationInput("load");
     // remove " with RemoveCharacter function
     input = RemoveCharacter(input, '\"');
+    
+    // remove white spaces
+    input = RemoveWhiteSpace(input);
 
     int dna_type = GetDnaType(input, 4);
-   
-    var strand = input[5..].ToUpper().ToCharArray();
-        
+
+    var strand = input.Substring(5, input.Length - 5).ToUpper().ToCharArray();
+
     SetDNA(strand, dna_type);
 }
 
+// Generate random DNA sequence of a BLOB
+// Command: generate f 1 (Generate random DNA of a female BLOB for DNA strand 1) 
 void Operation3() {
-    // generate a random DNA sequance
-
-    // command: generate <gender> <dna_type>
-    // <gender> -> f(female) or m(male)
-    // <dna_type> -> 1, 2 or 3
 
     string input = GetOperationInput("generate");
 
@@ -504,11 +599,14 @@ void Operation3() {
     GenerateRandomDNA(gender, dna_type);
 }
 
-void Operation4() {
 
-    Console.WriteLine(CheckDNAStructure(DNA1));
+// Check DNA gene structure 
+void Operation4() {
+    
+    Console.WriteLine(CheckDNAStructure());
 }
 
+// Check DNA of BLOB organism 
 void Operation5() {
 
     char[]? gene;
@@ -521,7 +619,7 @@ void Operation5() {
     while ((gene = GetNextGene(DNA1, ref index)) != null) {
 
         gene_count += 1;
-        
+
         if (gene_count == 1) {
             // gender gene
             if (gene.Length != 12 || GetGenderOfStrand(gene) == null) {
@@ -551,30 +649,23 @@ void Operation5() {
     Console.WriteLine();
 }
 
+//  Produce complement of a DNA sequence 
 void Operation6() {
-    // DNA complement
+
     char[] complement = new char[DNA1.Length];
 
-    for (int i = 0; i < DNA1.Length; i++) {
-        
-        complement[i] = DNA1[i];
-    }
+    for (int k = 0; k < DNA1.Length; k++) {
 
-    for (int k = 0; k < complement.Length; k++) {
-        
         switch (DNA1[k]) {
             case 'A':
                 complement[k] = 'T';
                 break;
-
             case 'T':
                 complement[k] = 'A';
                 break;
-
             case 'G':
                 complement[k] = 'C';
                 break;
-
             case 'C':
                 complement[k] = 'G';
                 break;
@@ -588,6 +679,8 @@ void Operation6() {
     PrintStrand("Complement", complement);
 }
 
+
+// Determine amino acids 
 void Operation7() {
     //Amino acids 
 
@@ -595,8 +688,8 @@ void Operation7() {
 
     Console.Write("Amino acids:         ");
 
-    for (int i = 0; i < DNA1.Length / 3; i++) {
-        string codon = new string(GetCodon(DNA1, i)); //****
+    for (int i = 0; i < DNA1.Length / 3; ++i) {
+        string codon = new string(GetCodon(DNA1, i));
 
         switch (codon) {
             case "GCT":
@@ -733,6 +826,7 @@ void Operation7() {
 
 }
 
+// Delete codons (delete n codons, starting from mth codon) 
 void Operation8() {
 
     int n = GetInput("Number of codons to be deleted");
@@ -761,50 +855,59 @@ void Operation8() {
     PrintStrand("DNA strand (Stage 2)", DNA1);
 }
 
+// Insert codons (insert a codon sequence, starting from mth codon) 
 void Operation9() {
 
     PrintStrand("DNA strand (stage 1)", DNA1);
 
-    Console.Write("Codon sequence: ");    
+    Console.Write("Codon sequence: ");
 
-    char[] codons = RemoveCharacter(Console.ReadLine().ToUpper(), ' ').ToCharArray();
+    char[] codons = RemoveWhiteSpace(Console.ReadLine().ToUpper()).ToCharArray();
 
-    int n = GetInput("Starting from") - 1;
+    CheckStrand(codons);
+
+    int start = (GetInput("Starting from") - 1) * 3;
 
     if (codons.Length % 3 != 0) {
 
-        Console.WriteLine("Error , Try again. Please enter the full number of codons");
+        throw new Exception("Unvalid codons");
     }
 
-    if ((n < 0) && (n > DNA1.Length + 1)) {
-        Console.WriteLine("Please enter a number in the correct range");
-    } else {
-        Console.WriteLine("Starting from :" + n);
+    if (start < 0 || start + codons.Length > DNA1.Length) {
+     
+        throw new Exception("Please enter a number in the correct range");
     }
 
     char[] strand = new char[DNA1.Length + codons.Length];
 
-    for (int i = 0; i < n * 3; ++i) {
+    // copy from DNA1 in range of [0, start)
+    for (int i = 0; i < start; ++i) {
         strand[i] = DNA1[i];
     }
-    
+
+    // copy from codons in range of [0, codons.Length)
     for (int i = 0; i < codons.Length; ++i) {
-        strand[n * 3 + i] = codons[i];
+        strand[start + i] = codons[i];
     }
 
-    for (int i = n * 3; i < DNA1.Length; ++i) {
-        strand[n * 3 + i] = DNA1[i];
+    // copy from DNA1 in range of [start, DNA1.Length)
+    for (int i = start; i < DNA1.Length; ++i) {
+        strand[codons.Length + i] = DNA1[i];
     }
+
 
     DNA1 = strand;
 
     PrintStrand("DNA strand (stage 2)", DNA1);
 }
 
+// Find codons (find a codon sequence, starting from mth codon) 
 void Operation10() {
 
     Console.Write("Codon sequence: ");
-    char[] codons = RemoveCharacter(Console.ReadLine().ToUpper(), ' ').ToCharArray();
+    char[] codons = RemoveWhiteSpace(Console.ReadLine().ToUpper()).ToCharArray();
+
+    CheckStrand(codons);
 
     int m = GetInput("Starting from") - 1;
 
@@ -818,10 +921,10 @@ void Operation10() {
 
         for (int t = 0; t < codons.Length / 3; ++t) {
 
-            var a = new string(GetCodon(DNA1, i + t));
-            var b = new string(GetCodon(codons, t));
+            var lhs = new string(GetCodon(DNA1, i + t));
+            var rhs = new string(GetCodon(codons, t));
 
-            if (a != b) {
+            if (lhs != rhs) {
                 equal = false;
                 break;
             }
@@ -832,8 +935,8 @@ void Operation10() {
             if (count > 0) {
                 Console.Write(", ");
             }
-            
-            Console.WriteLine("{0}", i + 1);
+
+            Console.Write("{0}", i + 1);
             count += 1;
         }
     }
@@ -845,13 +948,13 @@ void Operation10() {
     Console.WriteLine();
 }
 
+// Reverse codons (reverse n codons, starting from mth codon) 
 void Operation11() {
-    // Reverse codons 
 
-    int n = GetInput("n"); // reverse n codons
-    int m = GetInput("m") - 1; // starting from m
+    int n = GetInput("Number of codons to be reversed");
+    int m = GetInput("Starting from codon") - 1;
 
-    if ((m + n) * 3 > DNA1.Length || m < 0 || n < 0) {
+    if (m < 0 || n < 0 || (m + n) * 3 > DNA1.Length) {
         throw new Exception("Out of bounds parameters for n or m.");
     }
 
@@ -868,8 +971,8 @@ void Operation11() {
     }
 }
 
+// Find the number of genes in a DNA strand (BLOB or not) 
 void Operation12() {
-    // Find the number of genes in the DNA strand 1
 
     char[]? gene;
     int index = 0;
@@ -883,8 +986,8 @@ void Operation12() {
     Console.WriteLine("Number of genes: {0}", gene_count);
 }
 
+// Find the shortest gene in a DNA strand 
 void Operation13() {
-    // Find the shortest gene in the DNA strand 1
 
     char[]? gene;
     int index = 0;
@@ -912,8 +1015,8 @@ void Operation13() {
     Console.WriteLine("Position of the gene: {0}", shortest_pos + 1);
 }
 
+// Find the longest gene in a DNA strand 
 void Operation14() {
-    // Find the longest gene in the DNA strand 1
 
     char[]? gene;
     int index = 0;
@@ -941,8 +1044,8 @@ void Operation14() {
     Console.WriteLine("Position of the gene: {0}", longest_pos + 1);
 }
 
+// Find the most repeated n-nucleotide sequence in a DNA strand
 void Operation15() {
-    // Find the most repeated n-nucleotide sequence in a DNA strand
 
     int count = GetInput("Enter number of nucleotide: ");
 
@@ -953,55 +1056,66 @@ void Operation15() {
 
     for (int i = 0; i < length; ++i) {
 
-        char[] codon1 = new char[count];
- 
+        // get sequence in [i, i + count)
+        char[] sequence1 = new char[count];
+
         for (int j = 0; j < count; ++j) {
-            codon1[j] = DNA1[i + j];
+            sequence1[j] = DNA1[i + j];
         }
 
         int frequency = 0;
 
         for (int t = 0; t < length; ++t) {
-
-            char[] codon2 = new char[count];
+            
+            // get sequence from [t, t + count)
+            char[] sequence2 = new char[count];
 
             for (int j = 0; j < count; ++j) {
-                codon2[j] = DNA1[t + j];
+                sequence2[j] = DNA1[t + j];
             }
 
-            if (new string(codon1) == new string(codon2)) {
+            // compare two sequence 
+            if (new string(sequence1) == new string(sequence2)) {
                 frequency += 1;
             }
         }
-
+        
         if (frequency > biggest_frequency) {
-            most_repeated = codon1;
+            
+            // set frequency to biggest frequency
+            // and store sequence1
+            most_repeated = sequence1;
             biggest_frequency = frequency;
         }
 
     }
 
-    PrintStrand("Most repeated sequance", most_repeated);
+    PrintStrand("Most repeated sequence", most_repeated);
 
     Console.WriteLine("Frequency: {0}", biggest_frequency);
 }
 
+// Hydrogen bond statistics for a DNA strand 
+// A-T 2-hydrogen bond
+// C-G 3-hydrogen bond
 void Operation16() {
-    
-    // A-T 2-hydrogen bond
-    // C-G 3-hydrogen bond
 
     int hydrogen2 = 0;
     int hydrogen3 = 0;
 
     for (int i = 0; i < DNA1.Length; ++i) {
 
-        if (DNA1[i] == 'A' || DNA1[i] == 'T') {
-
-            hydrogen2 += 1;
-        } else if (DNA1[i] == 'C' || DNA1[i] == 'G') {
-
-            hydrogen3 += 1;
+        switch (DNA1[i]) {
+            case 'A':
+            case 'T':
+                hydrogen2 += 1;
+                break;
+            case 'C':
+            case 'G':
+                hydrogen3 += 1;
+                break;
+            default:
+                throw new Exception();
         }
     }
 
@@ -1013,10 +1127,18 @@ void Operation16() {
 
 }
 
+// Simulate BLOB generations using DNA strand 1 and 2
 void Operation17() {
 
+    char? dna1_gender = GetGenderOfStrand(DNA1);
+    char? dna2_gender = GetGenderOfStrand(DNA2);
+
+    if (!((dna1_gender == 'm' && dna2_gender == 'f') || (dna1_gender == 'f' && dna2_gender == 'm'))) {
+        throw new Exception("Procreation needs 1 male BLOB and 1 female BLOB");
+    }
+
     for (int i = 1; i <= 10; ++i) {
-        
+
         DNA3 = Procreate();
 
         Console.WriteLine("Generation {0}:", i);
@@ -1035,29 +1157,50 @@ void Operation17() {
             break;
         }
 
+        Console.WriteLine();
+
         DNA1 = DNA3;
 
-        char? gender_of_dna1 = GetGenderOfStrand(DNA1);
-        char gender;
+        dna1_gender = GetGenderOfStrand(DNA1);
 
-        if (gender_of_dna1 == 'f') {
-            gender = 'm';
-        } else if (gender_of_dna1 == 'm') {
-            gender = 'f';
+        char new_gender;
+
+        if (dna1_gender == 'f') {
+            new_gender = 'm';
+        } else if (dna1_gender == 'm') {
+            new_gender = 'f';
         } else {
             throw new Exception();
         }
 
         // generate random dna for DNA2 with specified gender
-        GenerateRandomDNA(gender, 2);
+        GenerateRandomDNA(new_gender, 2);
     }
-
 }
 
+
+// Print information for all of the operations
+Console.WriteLine("Life On Mars");
+
+var old_color = Console.ForegroundColor;
+
+for (int i = 0; i < OPERATION_INFO.Length; ++i) {
+
+    Console.ForegroundColor = ConsoleColor.DarkCyan;
+    Console.Write("Operation {0}: ", i + 1);
+
+    Console.ForegroundColor = ConsoleColor.Cyan;
+    Console.WriteLine(OPERATION_INFO[i]);
+
+}
+Console.ForegroundColor = old_color;
+
+Console.WriteLine();
+
 while (true) {
-    
+
     try {
-        int operation = GetInput("operation");
+        int operation = GetInput("Operation");
 
         switch (operation) {
             case 1:
