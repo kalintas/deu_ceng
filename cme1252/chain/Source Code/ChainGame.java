@@ -1,11 +1,11 @@
 import enigma.console.Console;
 import enigma.core.Enigma;
-import enigma.event.TextMouseEvent;
-import enigma.event.TextMouseListener;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.io.IOException;
 import java.util.Random;
+import java.util.Scanner;
 
 public class ChainGame {
 
@@ -22,12 +22,16 @@ public class ChainGame {
     public char[][] board = new char[BOARD_HEIGHT][BOARD_WIDTH];
 
     public SingleLinkedList chain = new SingleLinkedList();
-    public MultiLinkedList table=new MultiLinkedList();
+    public MultiLinkedList table = new MultiLinkedList();
+
+    HighScoreTable highScoreTable = new HighScoreTable();
 
     private Player player = new Player(this);
 
     // Game state variables
     private boolean gameOver = false;
+    private String chainErrorReason = new String();
+
     private int boardSeed = 0;
     private int round = 0;
 
@@ -53,17 +57,14 @@ public class ChainGame {
             }
         };
         console.getTextWindow().addKeyListener(keyListener);
-
     }
 
     /**
      * Initializes the game. Fills the game board with numbers.
      */
-    public void initialize(int seed) {
+    public void initialize() {
 
-        this.boardSeed = seed;
-
-        Random random = new Random(seed);
+        Random random = new Random(this.boardSeed);
 
         for (int i = 0; i < BOARD_HEIGHT; ++i) {
             for (int t = 0; t < BOARD_WIDTH; ++t) {
@@ -75,7 +76,12 @@ public class ChainGame {
         }
     }
 
-    public void run() throws Exception {
+    /**
+     * Runs the chain game.
+     *
+     * @return true if the game should be restarted.
+     */
+    public boolean run() throws Exception {
 
         this.printScreen();
 
@@ -97,11 +103,17 @@ public class ChainGame {
                         this.player.move(0, -1);
                         break;
                     case KeyEvent.VK_SPACE:
-                        this.player.placeChainPiece();
+
+                        if (!this.player.removeChainPiece()) {
+
+                            this.player.placeChainPiece();
+                        }
                         break;
                     case KeyEvent.VK_E:
                         this.gameOver = true;
                         break;
+                    case KeyEvent.VK_R:
+                        return true;
                     case KeyEvent.VK_ENTER:
                         this.constructChain();
                         break;
@@ -116,18 +128,83 @@ public class ChainGame {
             Thread.sleep(20);
         }
 
-        this.setCursorPosition(33, 15);
-        System.out.println("Error in chain. Press enter to leave");
-        this.setCursorPosition(33, 16);
-        System.out.println("- Game Over -");
-
-        this.setCursorPosition(0, 0);
-        // Wait user to press enter
-        System.in.read();
+        this.gameOver();
+        return false;
     }
 
-    public void setCursorPosition(int x, int y) {
-        this.console.getTextWindow().setCursorPosition(x,y);
+    /**
+     * Renders the game menu and gets the board seed from the user.
+     */
+    public void gameMenu() {
+
+        this.clearScreen();
+
+        String[] gameNameLines = {
+                "   _____ _           _       \n",
+                "  / ____| |         (_)      \n",
+                " | |    | |__   __ _ _ _ __  \n",
+                " | |    | '_ \\ / _` | | '_ \\ \n",
+                " | |____| | | | (_| | | | | |\n",
+                "  \\_____|_| |_|\\__,_|_|_| |_|\n",
+        };
+
+        for (int i = 0; i < gameNameLines.length; ++i) {
+
+            this.setCursorPosition(30, i + 10);
+            System.out.println(gameNameLines[i]);
+        }
+
+        while (true) {
+
+
+            this.setCursorPosition(35, 17);
+            System.out.print("Board Seed:                   ");
+            this.setCursorPosition(46, 17);
+
+            Scanner scanner = new Scanner(System.in);
+
+            try {
+                this.boardSeed = scanner.nextInt();
+            } catch (Exception exception) {
+                continue;
+            }
+
+            break;
+        }
+        this.clearScreen();
+    }
+
+    private void gameOver() throws IOException {
+
+        if (!this.chainErrorReason.isEmpty()) {
+
+            this.setCursorPosition(33, 14);
+            System.out.println("- Game Over -");
+            this.setCursorPosition(33, 15);
+            System.out.println("Error in chain");
+            this.setCursorPosition(33, 16);
+            System.out.println(this.chainErrorReason);
+        }
+
+        this.setCursorPosition(33, 17);
+        System.out.print("Name : ");
+        String name = new Scanner(System.in).next();
+        highScoreTable.write(name, player.getScore());
+        clearScreen();
+        highScoreTable.display();
+    }
+
+    private void clearScreen() {
+
+        for (int i = 0; i < console.getTextWindow().getColumns(); ++i) {
+            for (int j = 0; j < console.getTextWindow().getRows(); ++j) {
+                console.getTextWindow().output(i, j, ' ');
+            }
+        }
+    }
+
+    private void setCursorPosition(int x, int y) {
+        this.console.getTextWindow().setCursorPosition(x, y);
     }
 
     public void printSquare(char square, int x, int y) {
@@ -137,7 +214,7 @@ public class ChainGame {
         System.out.print(square);
     }
 
-    public void printScreen() {
+    private void printScreen() {
 
         for (int i = 0; i < BOARD_HEIGHT; ++i) {
             for (int t = 0; t < BOARD_WIDTH; ++t) {
@@ -150,13 +227,13 @@ public class ChainGame {
 
         this.setCursorPosition(33, 2);
         System.out.print("Score      :  " + this.player.getScore());
-        this.setCursorPosition(33,3);
+        this.setCursorPosition(33, 3);
         System.out.print("-----------------------------------------------------");
-        this.setCursorPosition(33,0);
+        this.setCursorPosition(33, 0);
         System.out.print("Board Seed :  " + this.boardSeed);
-        this.setCursorPosition(33,1);
+        this.setCursorPosition(33, 1);
         System.out.print("Round      :  " + this.round);
-        this.setCursorPosition(33,4);
+        this.setCursorPosition(33, 4);
         System.out.print("Table:");
     }
 
@@ -167,12 +244,18 @@ public class ChainGame {
      * The number of squares in the chain must be at least 4.
      * The score of the chain is n2 (n: The number of elements in the chain)
      */
-    public void constructChain() {
+    private void constructChain() {
 
         int chainSize = this.chain.size();
 
+        // Don't end the game if there is no chain.
+        if (chainSize == 0) {
+            return;
+        }
+
         // Check chain size rule.
         if (chainSize < 3) {
+            this.chainErrorReason = "The number of squares must be at least 4";
             this.gameOver = true;
             return;
         }
@@ -188,95 +271,28 @@ public class ChainGame {
             int difference = Character.getNumericValue(firstSquare) - Character.getNumericValue(secondSquare);
 
             if (difference != 1 && difference != -1) {
+
+                this.chainErrorReason = "Difference between neighbor squares must be 1";
                 this.gameOver = true;
                 return;
             }
 
         }
 
-        int newScore = player.getScore() + chainSize * chainSize;
+        // Calculate score
+        int newScore = 0;
+
+        if (this.player.getChainStartX() == this.player.getChainEndX() && this.player.getChainStartY() == this.player.getChainEndY()) {
+
+            newScore = player.getScore() + (chainSize) * (chainSize);
+        } else {
+
+            newScore = player.getScore() + (chainSize + 1) * (chainSize + 1);
+        }
 
         player.setScore(newScore);
 
-        table.addChainRow(round+1);
-        
-        for (Node current = this.chain.getHead(); current != null; current = current.getLink()) {
-
-            ChainPiece piece = (ChainPiece) current.getData();
-            
-            char firstSquare=this.board[piece.getFirstNumberY()][piece.getFirstNumberX()];
-            char secondSquare=this.board[piece.getSecondNumberY()][piece.getSecondNumberX()];
-
-            if(current==this.chain.getHead()) {
-            	
-            	ChainPiece piece2=(ChainPiece) current.getLink().getData();
-            	
-            if(piece.getX()<piece2.getX() && piece.getY()<piece2.getY()) {
-            	
-            	table.addChainColumn(round+1, firstSquare);
-            	table.addChainColumn(round+1, secondSquare);
-            }
-            else if(piece.getX()>piece2.getX() && piece.getY()>piece2.getY()) {
-            	
-            	table.addChainColumn(round+1, secondSquare);
-            	table.addChainColumn(round+1, firstSquare);
-            }
-            else if(piece.getX()==piece2.getX() && piece.getY()>piece2.getY()) {
-            	
-            	table.addChainColumn(round+1, secondSquare);
-            	table.addChainColumn(round+1, firstSquare);
-            }
-            else if(piece.getX()==piece2.getX() && piece.getY()<piece2.getY()) {
-            	
-            	table.addChainColumn(round+1, firstSquare);
-            	table.addChainColumn(round+1, secondSquare);
-            	
-            }
-            else if(piece.getX()%2==0 && piece.getY()%2==1 && piece.getX()<piece2.getX() && piece.getY()>piece2.getY()) {
-            	
-            	table.addChainColumn(round+1, secondSquare);
-            	table.addChainColumn(round+1, firstSquare);
-            }
-            else if(piece.getX()%2==0 && piece.getY()%2==1 && piece.getX()>piece2.getX() && piece.getY()<piece2.getY()) {
-            	
-            	table.addChainColumn(round+1, firstSquare);
-            	table.addChainColumn(round+1, secondSquare);
-            }
-            
-            else if(piece.getY()==piece2.getY() && piece.getX()<piece2.getX()) {
-            	
-            	table.addChainColumn(round+1, firstSquare);
-            	table.addChainColumn(round+1, secondSquare);
-            }
-            
-            else if(piece.getY()==piece2.getY() && piece.getX()>piece2.getX()) {
-            	
-            	table.addChainColumn(round+1, secondSquare);
-            	table.addChainColumn(round+1, firstSquare);
-            }
-            
-            else if(piece.getX()%2==1 && piece.getY()%2==0 && piece.getX()<piece2.getX() && piece.getY()>piece2.getY() ) {
-            	
-            	table.addChainColumn(round+1, firstSquare);
-            	table.addChainColumn(round+1, secondSquare);
-            }
-            else if(piece.getX()%2==1 && piece.getY()%2==0 && piece.getX()>piece2.getX() && piece.getY()<piece2.getY() ) {
-            	
-            	table.addChainColumn(round+1, secondSquare);
-            	table.addChainColumn(round+1, firstSquare);
-            }
-            }
-            else {
-            	
-            	if(firstSquare==table.getLastNumber(round+1))
-            	table.addChainColumn(round+1, secondSquare);
-            	else if(secondSquare==table.getLastNumber(round+1)){
-            		
-            		table.addChainColumn(round+1, firstSquare);
-            	}
-            }
-
-        }
+        this.addToTable();
 
         // Chain is correct. Remove chained numbers.
         for (Node current = this.chain.getHead(); current != null; current = current.getLink()) {
@@ -289,25 +305,93 @@ public class ChainGame {
             this.printSquare(' ', piece.getX(), piece.getY());
         }
 
-        if(round==0) {
-        	
-        	setCursorPosition(33,5);
-        	table.display(1);
-        }
-        else {
-        	
-        	setCursorPosition(33,2*round+4);
-        	System.out.println("+");
-        	setCursorPosition(33,2*round+5);
-        	table.display(round+1);
-        }
-
         // Empty the chain SLL
         this.chain = new SingleLinkedList();
 
         this.round += 1;
         this.printScreen();
-        
+    }
+
+    private void addToTable() {
+
+        table.addChainRow(round + 1);
+
+        for (Node current = this.chain.getHead(); current != null; current = current.getLink()) {
+
+            ChainPiece piece = (ChainPiece) current.getData();
+
+            char firstSquare = this.board[piece.getFirstNumberY()][piece.getFirstNumberX()];
+            char secondSquare = this.board[piece.getSecondNumberY()][piece.getSecondNumberX()];
+
+            if (current == this.chain.getHead()) {
+
+                ChainPiece piece2 = (ChainPiece) current.getLink().getData();
+
+                if (piece.getX() < piece2.getX() && piece.getY() < piece2.getY()) {
+
+                    table.addChainColumn(round + 1, firstSquare);
+                    table.addChainColumn(round + 1, secondSquare);
+                } else if (piece.getX() > piece2.getX() && piece.getY() > piece2.getY()) {
+
+                    table.addChainColumn(round + 1, secondSquare);
+                    table.addChainColumn(round + 1, firstSquare);
+                } else if (piece.getX() == piece2.getX() && piece.getY() > piece2.getY()) {
+
+                    table.addChainColumn(round + 1, secondSquare);
+                    table.addChainColumn(round + 1, firstSquare);
+                } else if (piece.getX() == piece2.getX() && piece.getY() < piece2.getY()) {
+
+                    table.addChainColumn(round + 1, firstSquare);
+                    table.addChainColumn(round + 1, secondSquare);
+
+                } else if (piece.getX() % 2 == 0 && piece.getY() % 2 == 1 && piece.getX() < piece2.getX() && piece.getY() > piece2.getY()) {
+
+                    table.addChainColumn(round + 1, secondSquare);
+                    table.addChainColumn(round + 1, firstSquare);
+                } else if (piece.getX() % 2 == 0 && piece.getY() % 2 == 1 && piece.getX() > piece2.getX() && piece.getY() < piece2.getY()) {
+
+                    table.addChainColumn(round + 1, firstSquare);
+                    table.addChainColumn(round + 1, secondSquare);
+                } else if (piece.getY() == piece2.getY() && piece.getX() < piece2.getX()) {
+
+                    table.addChainColumn(round + 1, firstSquare);
+                    table.addChainColumn(round + 1, secondSquare);
+                } else if (piece.getY() == piece2.getY() && piece.getX() > piece2.getX()) {
+
+                    table.addChainColumn(round + 1, secondSquare);
+                    table.addChainColumn(round + 1, firstSquare);
+                } else if (piece.getX() % 2 == 1 && piece.getY() % 2 == 0 && piece.getX() < piece2.getX() && piece.getY() > piece2.getY()) {
+
+                    table.addChainColumn(round + 1, firstSquare);
+                    table.addChainColumn(round + 1, secondSquare);
+                } else if (piece.getX() % 2 == 1 && piece.getY() % 2 == 0 && piece.getX() > piece2.getX() && piece.getY() < piece2.getY()) {
+
+                    table.addChainColumn(round + 1, secondSquare);
+                    table.addChainColumn(round + 1, firstSquare);
+                }
+            } else {
+
+                if (firstSquare == table.getLastNumber(round + 1) && !(piece.getSecondNumberX() == this.player.getChainStartX() && piece.getSecondNumberY() == this.player.getChainStartY()))
+                    table.addChainColumn(round + 1, secondSquare);
+                else if (secondSquare == table.getLastNumber(round + 1) && !(piece.getFirstNumberX() == this.player.getChainStartX() && piece.getFirstNumberY() == this.player.getChainStartY())) {
+
+                    table.addChainColumn(round + 1, firstSquare);
+                }
+            }
+
+        }
+
+        if (round == 0) {
+
+            setCursorPosition(33, 5);
+            table.display(1);
+        } else {
+
+            setCursorPosition(33, 2 * round + 4);
+            System.out.println("+");
+            setCursorPosition(33, 2 * round + 5);
+            table.display(round + 1);
+        }
     }
 
 }

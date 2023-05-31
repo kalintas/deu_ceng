@@ -33,6 +33,7 @@ public class SingleLinkedList {
      * Does an unsorted add to the linked lists back.
      * Insert at last if there is an element already.
      * Linked lists size is increased 1 after this operation.
+     *
      * @param data object to be added to the list
      */
     public void add(Object data) {
@@ -55,62 +56,54 @@ public class SingleLinkedList {
         }
     }
 
-    public void addtoStart(Object data) {
-    	
-    	Node newnode=new Node(data);
-    	
-    	newnode.setLink(head);
-    	
-    	head=newnode;
-    	
-    }
-    /**
-     * Does a sorted add to the linked lists back.
-     * Adds elements in most to the least order.
-     * Linked lists size is increased 1 after this operation.
-     * @return the index of the newly inserted object.
-     * @param data object to be added to the list.
-     */
-   /* public int addSorted(Object data) {
+    public void addFirst(Object data) {
 
         Node newNode = new Node(data);
-        int index = 0;
 
-        if (this.head == null) {
-            // List is empty.
-            this.head = newNode;
-        } else if (Integer.pa >= (int)this.head.getData()) {
-            // Add newNode to the front.
-            newNode.setLink(this.head);
-            this.head = newNode;
-        } else {
+        newNode.setLink(this.head);
 
-            // Iterate elements of the list.
-            for (Node currentNode = this.head; currentNode != null; currentNode = currentNode.getLink()) {
+        this.head = newNode;
+    }
 
-                Node nextNode = currentNode.getLink();
-                index += 1;
+    public Node deleteFirst() {
 
-                // Find the correct place.
-                // Add to the back if all elements are bigger than parameter data.
-                if (nextNode == null || (int)data >= (int)nextNode.getData()) {
+        Node result = this.head;
 
-                    currentNode.setLink(newNode);
-                    newNode.setLink(nextNode);
-                    break;
-                }
-            }
+        if (this.head != null) {
+
+            this.head = this.head.getLink();
         }
 
-        return index;
-    }*/
+        return result;
+    }
+
+    public Node deleteLast() {
+
+        Node previousNode = null;
+        Node currentNode = this.head;
+
+        while (currentNode.getLink() != null) {
+            previousNode = currentNode;
+            currentNode = currentNode.getLink();
+        }
+
+        Node result = previousNode.getLink();
+
+        if (previousNode != null) {
+            previousNode.setLink(null);
+        }
+
+        return result;
+    }
+
 
     /**
      * Inserts parameter data at the location parameter index.
      * Size of the list is increased 1 after this call.
-     * @throws IndexOutOfBoundsException if index is bigger or equal to the size of the list.
-     * @param data object to be inserted to the list.
+     *
+     * @param data  object to be inserted to the list.
      * @param index location of the newly inserted object.
+     * @throws IndexOutOfBoundsException if index is bigger or equal to the size of the list.
      */
     public void insert(Object data, int index) throws IndexOutOfBoundsException {
 
@@ -150,6 +143,7 @@ public class SingleLinkedList {
     /**
      * Deletes all elements that match parameter data.
      * sll.find(data) is always null after calling sll.delete(data).
+     *
      * @param data object to be searched and removed from the list.
      * @throws NoSuchElementException if list is empty
      */
@@ -187,9 +181,10 @@ public class SingleLinkedList {
 
     /**
      * Finds and returns the index of the node that equals to the parameter data from the list.
+     *
      * @param data object to be searched and returned.
      * @return index of the node from the list that Node.getData().equals(data).
-     *         Returns -1 if there is no such element in the list.
+     * Returns -1 if there is no such element in the list.
      */
     public int find(Object data) {
 
@@ -217,11 +212,23 @@ public class SingleLinkedList {
         return this.head;
     }
 
+    public Node getLast() {
+
+        Node currentNode = this.head;
+
+        while (currentNode.getLink() != null) {
+            currentNode = currentNode.getLink();
+        }
+
+        return currentNode;
+    }
+
     /**
      * Returns the node at the index.
-     * @throws NoSuchElementException if list is empty.
-     * @throws IndexOutOfBoundsException if parameter index is larger than lists size
+     *
      * @return node at the parameter index.
+     * @throws NoSuchElementException    if list is empty.
+     * @throws IndexOutOfBoundsException if parameter index is larger than lists size
      */
     public Node getNodeAt(int index) throws IndexOutOfBoundsException {
 
@@ -246,30 +253,8 @@ public class SingleLinkedList {
     }
 
     /**
-     * @throws NoSuchElementException if list is empty.
-     * @return a random node from the linked list. Returns null if the list is empty.
-     */
-    public Node getRandom() throws NoSuchElementException {
-
-        if (this.isEmpty()) {
-            throw new NoSuchElementException("Cannot get random element. List is empty.");
-        }
-
-        // Create a random index within the list
-        int randomIndex = ThreadLocalRandom.current().nextInt(this.size());
-
-        Node randomNode = this.head;
-
-        for (int i = 0; i < randomIndex; ++i) {
-
-            randomNode = randomNode.getLink();
-        }
-
-        return randomNode;
-    }
-
-    /**
      * Returns the size of the list by iterating all the nodes.
+     *
      * @return size of the list.
      */
     public int size() {
@@ -298,22 +283,23 @@ public class SingleLinkedList {
 
     /**
      * Prints list to the console
+     *
      * @param name name of the list.
      */
     public void print(String name) {
 
-        System.out.println("s: "+name);
+        System.out.println("s: " + name);
 
         Node currentNode = this.head;
 
         while (currentNode != null) {
 
-            System.out.println("s "+currentNode.getData());
+            System.out.println("s " + currentNode.getData());
             currentNode = currentNode.getLink();
         }
 
         System.out.println();
     }
-    
-   
+
+
 }

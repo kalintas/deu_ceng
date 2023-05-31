@@ -42,7 +42,7 @@ public class ChainPiece {
             return this.x / 2;
         } else {
             // Chain is linked horizontally
-            return this.x / 2+ 1;
+            return this.x / 2 + 1;
         }
     }
 
